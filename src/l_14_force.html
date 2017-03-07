@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>hello world</title>
+  <style>
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: black;
+      shape-rendering: crispEdges;
+    }
+
+    .axis text {
+      font-family: sans-serif;
+      font-size: 11px;
+    }
+
+    .myRect {
+      fill: steelblue;
+    }
+
+    .myText {
+      fill: white;
+      text-anchor: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  var width = 400;
+  var height = 400;
+
+  var nodes = [ { name: "桂林" }, { name: "广州" },
+              { name: "厦门" }, { name: "杭州" },
+              { name: "上海" }, { name: "青岛" },
+              { name: "天津" } ];
+
+  var edges = [ { source : 0 , target: 1 } , { source : 0 , target: 2 } ,
+               { source : 0 , target: 3 } , { source : 1 , target: 4 } ,
+               { source : 1 , target: 5 } , { source : 1 , target: 6 } ];
+
+  var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  var force = d3.layout.force()
+    .nodes(nodes)
+    .links(edges)
+    .size([width, height])
+    .linkDistance(150)
+    .charge([-400]);
+
+  console.log(nodes);
+  console.log(edges);
+
+  force.start();
+
+  var color = d3.scale.category20();
+
+  var svg_edges = svg.selectAll('line')
+    .data(edges)
+    .enter()
+    .append('line')
+    .attr('stroke', '#ccc')
+    .attr('stroke-width', 1);
+
+  var svg_nodes = svg.selectAll('circle')
+    .data(nodes)
+    .enter()
+    .append('circle')
+    .attr('r', 20)
+    .attr('fill', function (d, i) {
+      return color(i);
+    })
+    .call(force.drag);
+
+  var svg_texts = svg.selectAll('text')
+    .data(nodes)
+    .enter()
+    .append('text')
+    .attr('fill', 'black')
+    .attr('dx', 20)
+    .attr('dy', 8)
+    .text(function (d) {
+      return d.name;
+    });
+
+  force.on('tick', function () {
+    svg_nodes.attr('cx', function (d) {
+      return d.x;
+    }).attr('cy', function (d) {
+      return d.y;
+    });
+
+    svg_edges.attr('x1', function (d) {
+      return d.source.x;
+    }).attr('y1', function (d) {
+      return d.source.y;
+    }).attr('x2', function (d) {
+      return d.target.x;
+    }).attr('y2', function (d) {
+      return d.target.y;
+    });
+
+    svg_texts.attr('x', function (d) {
+      return d.x;
+    }).attr('y', function (d) {
+      return d.y;
+    })
+  });
+
+  </script>
+</body>
+</html>

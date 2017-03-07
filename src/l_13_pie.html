@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>hello world</title>
+  <style>
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: black;
+      shape-rendering: crispEdges;
+    }
+
+    .axis text {
+      font-family: sans-serif;
+      font-size: 11px;
+    }
+
+    .myRect {
+      fill: steelblue;
+    }
+
+    .myText {
+      fill: white;
+      text-anchor: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  var width = 400;
+  var height = 400;
+
+  var dataset = [ 30 , 10 , 43 , 55 , 13 ];
+
+  var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  var pie = d3.layout.pie();
+  var piedata = pie(dataset);
+
+  var arc = d3.svg.arc()
+    .innerRadius(50)
+    .outerRadius(150);
+
+  var color = d3.scale.category10();
+
+  var arcs = svg.selectAll('g')
+    .data(piedata)
+    .enter()
+    .append('g')
+    .attr('transform', 'translate(' + (width/2) + ', ' + (height/2) + ')');
+
+  arcs.append('path')
+    .attr('fill', function (d, i) {
+      return color(i);
+    })
+    .attr('d', function (d) {
+      return arc({
+        data: d.data,
+        value: d.value,
+        startAngle: d.startAngle,
+        endAngle: d.startAngle
+      });
+    })
+    .transition()
+    .duration(1000)
+    .ease('elastic')
+    .attr('d', function (d) {
+      return arc(d);
+    });
+
+  arcs.append('text')
+    .attr('transform', function (d) {
+      return 'translate(' + arc.centroid(d) + ')';
+    })
+    .attr('text-anchor', 'middle')
+    .text(function (d) {
+      return d.data;
+    });
+
+
+  </script>
+</body>
+</html>

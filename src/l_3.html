@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>hello world</title>
+</head>
+<body>
+  <p>Hello World 1</p>
+  <p>Hello World 2</p>
+  <div></div>
+  <div></div>
+  <div></div>
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+  var str = 'China';
+  var body = d3.select('body');
+  var p = body.selectAll('p');
+  p.datum(str);
+  p.text(function (d, i) {
+    return '第' + i + ' 个元素绑定的数据是 ' + d;
+  });
+
+  var dataset = ['I like dogs', 'I like cats', 'I like snakes'];
+  var div = body.selectAll('div');
+  div.data(dataset);
+  div.text(function (d, i) {
+    return d;
+  });
+  </script>
+</body>
+</html>

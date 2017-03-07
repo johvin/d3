@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>hello world</title>
+</head>
+<body>
+  <p class="myclass">Apple</p>
+  <p id="myid">Pear</p>
+  <p class="myclass">Banana</p>
+
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+    var body = d3.select('body');
+    var myid = body.select('#myid').style('color', 'red');
+    body.selectAll('.myclass').style('color', 'blue');
+
+    body.append('p').text('added just now');
+    body.insert('p', '#myid').text('inserted element');
+
+    setTimeout(function() {
+      myid.text('this is going to be removed');
+      setTimeout(function() {
+        myid.remove();
+      }, 2000);
+    }, 1000);
+  </script>
+</body>
+</html>
