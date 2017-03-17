@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>cluster layout</title>
+  <style>
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 1.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  var width = 600;
+  var height = 600;
+
+  var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  var cluster = d3.layout.cluster()
+    .size([width - 100, height - 200]);
+
+  d3.json('./city.json', function (err, root) {
+    if (err)
+      return console.error(err);
+
+    // console.log(root);
+    var nodes = cluster.nodes(root);
+    var links = cluster.links(nodes);
+
+    // console.log(nodes);
+    // console.log(links);
+
+    // 对角线生成器，根据两个点生成 bezier 曲线
+    var diagonal = d3.svg.diagonal()
+      .projection(function (d) {
+        return [d.y, d.x];
+      });
+
+    var g = svg.append('g')
+      .attr('transform', 'translate(50, 50)');
+
+    g.selectAll('path')
+      .data(links)
+      .enter()
+      .append('path')
+      .attr('class', 'link')
+      .attr('d', diagonal);
+
+    g.selectAll('circle')
+      .data(nodes)
+      .enter()
+      .append('circle')
+      .attr('transform', function (d) {
+        return 'translate(' + d.y + ', ' + d.x + ')';
+      })
+      .attr('fill', '#fff')
+      .attr('stroke', 'steelblue')
+      .attr('stroke-width', 1)
+      .attr('r', 5);
+
+    g.selectAll('text')
+      .data(nodes)
+      .enter()
+      .append('text')
+      .attr('transform', function (d) {
+        return 'translate(' + d.y + ', ' + d.x + ')';
+      })
+      .attr('dx', function (d) {
+        return d.depth < 2 ? -d.name.length * 20 * .8 : 10;
+      })
+      .attr('dy', 5)
+      .attr('font-size', '.8em')
+      .text(function (d) {
+        return d.name;
+      });
+  });
+
+
+
+  </script>
+</body>
+</html>

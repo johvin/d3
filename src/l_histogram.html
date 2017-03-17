@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>histogram layout</title>
+  <style>
+    .control {
+      width: 700px;
+      text-align: center;
+    }
+    .axis {
+      fill: none;
+      stroke: black;
+      stroke-width: .8px;
+      font-size: 10px;
+    }
+    .rect {
+      fill: steelblue;
+    }
+  </style>
+</head>
+<body onload="load()">
+  <div class="control">
+    <button onclick="showHistogram()">显示直方图</button>
+    <button onclick="showLine()">显示曲线</button>
+  </div>
+
+  <script async type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  function load() {
+    var width = 700;
+    var height = 600;
+
+    var svg = d3.select('body').insert('svg', '.control')
+      .attr('width', width)
+      .attr('height', height);
+
+    // 平均值 170， 标准差 10
+    var rand = d3.random.normal(170, 10);
+
+    var dataset = [];
+
+    for(var i = 0; i < 100; i++) {
+      dataset.push(rand());
+    }
+    // console.log(dataset);
+
+    var binsNum = 20, rangeMin = 130, rangeMax = 210;
+
+    var histogram = d3.layout.histogram()
+      .range([rangeMin, rangeMax])
+      .bins(binsNum)
+      .frequency(true);
+
+    var hisData = histogram(dataset);
+
+    // console.log(hisData);
+
+    var xTicks = hisData.map(function (d) { return d.x; });
+    var xAxisWidth = width - 100;
+
+    var xScale = d3.scale.ordinal()
+      .domain(xTicks)
+      .rangeRoundBands([0, xAxisWidth], 0.1);
+
+    var xAxis = d3.svg.axis()
+      .scale(xScale)
+      .orient('bottom')
+      .tickFormat(d3.format('.0f'));
+
+    var padding = { top: 50 , right: 50, bottom: 50, left: 50 };
+
+    svg.append('g')
+      .attr('class', 'axis')
+      .attr('transform', 'translate(' + padding.left + ', ' + (height - padding.bottom) + ')')
+      .call(xAxis);
+
+    var yAxisWidth = height - 100;
+
+    var yScale = d3.scale.linear()
+      .domain([d3.min(hisData, function (d) { return d.y; }), d3.max(hisData, function (d) { return d.y; })])
+      .range([10, yAxisWidth]);
+
+    var gRect = svg.append('g')
+      .attr('transform', 'translate(' + padding.left + ', ' + padding.top + ')');
+
+    var gLine = svg.append('g')
+      .attr('transform', 'translate(' + padding.left + ', ' + padding.top + ')')
+      .attr('opacity', 0);
+
+    var lineDrawed = false;
+    var showLine = false;
+
+    gRect.selectAll('rect')
+      .data(hisData)
+      .enter()
+      .append('rect')
+      .attr('class', 'rect')
+      .attr('x', function (d) {
+        return xScale(d.x);
+      })
+      .attr('width', function (d) {
+        return xScale.rangeBand();
+      })
+      .attr('y', yAxisWidth)
+      .attr('height', 0)
+      .on('mouseenter', function () {
+        if (showLine) return;
+        var selfData = d3.select(this).data()[0];
+        // console.log(selfData);
+        svg.append('text')
+          .attr('class', 'hint')
+          .attr('transform', 'translate(' + padding.left + ', ' + padding.top + ')')
+          .attr('fill', selfData.y > 0 ? 'white' : 'black')
+          .attr('x', xScale(selfData.x))
+          .attr('y', yAxisWidth - yScale(selfData.y))
+          .attr('text-anchor', 'middle')
+          .attr('dx', 10)
+          .attr('dy', selfData.y > 0 ? 20 : -10)
+          .text(selfData.y);
+      })
+      .on('mouseleave', function() {
+        if (showLine) return;
+        svg.select('.hint').remove();
+      })
+      .transition()
+      .duration(1000)
+      .attr('y', function (d) {
+        return yAxisWidth - yScale(d.y);
+      })
+      .attr('height', function (d) {
+        return yScale(d.y);
+      });
+
+    function drawLine() {
+      var lineGenerator = d3.svg.line()
+        .x(function (d) { return xScale(d.x); })
+        .y(function (d) { return yAxisWidth - yScale(d.y); })
+        .interpolate('cardinal');
+
+      gLine.append('path')
+        .attr('fill', 'none')
+        .attr('stroke', 'black')
+        .attr('stroke-width', 1)
+        .attr('d', lineGenerator(hisData))
+        .attr('transform', 'translate(' + xScale.rangeBand() / 2 + ', 0)');
+
+      lineDrawed = true;
+    }
+
+    window.showLine = function () {
+      if (!lineDrawed) drawLine();
+      showLine = true;
+      gRect.transition()
+        .duration(300)
+        .attr('opacity', 0);
+      gLine.transition()
+        .duration(500)
+        .attr('opacity', 1);
+    }
+
+    window.showHistogram = function () {
+      showLine = false;
+      gLine.transition()
+        .duration(300)
+        .attr('opacity', 0);
+      gRect.transition()
+        .duration(500)
+        .attr('opacity', 1);
+    }
+  }
+
+  </script>
+</body>
+</html>

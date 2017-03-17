@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>map annotation</title>
+  <style>
+    .province,
+    #southsea {
+      stroke: #000;
+      stroke-width: .2;
+    }
+  </style>
+</head>
+<body onload="load()">
+
+  <script async type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script async type="text/javascript" src="../lib/topojson.v1.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  function load() {
+    var width = 800;
+    var height = 600;
+
+    var svg = d3.select('body').append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    var china = svg.append('g');
+
+    var projection = d3.geo.mercator()
+      .center([107, 31])
+      .scale(600)
+      .translate([width / 2, height * 2 /3]);
+
+    var path = d3.geo.path()
+      .projection(projection);
+
+    d3.json("./mapdata/china_detail.topo.json", function(error, root) {
+
+      if (error)
+        return console.error(error);
+
+      var geojson = topojson.feature(root, root.objects.china);
+
+      china.selectAll('path')
+        .data(geojson.features)
+        .enter()
+        .append('path')
+        .attr('class', 'province')
+        .attr('fill', '#ccc')
+        .attr('d', path);
+
+      // 南海
+      d3.xml('./mapdata/southchinasea.svg', function (err, xml) {
+        if (err)
+          return console.error(err);
+
+        svg.append(function () {
+          return xml.getElementsByTagName('g')[0];
+        });
+
+        svg.select('#southsea')
+          .attr('fill', '#ccc')
+          .attr('transform', 'translate(600, 500) scale(.5)');
+      });
+
+      d3.json('./places.json', function (err, placesData) {
+        if (err)
+          return console.error(err);
+
+        var places = svg.append('g');
+
+        var locations = places.selectAll('path')
+          .data(placesData.location)
+          .enter()
+          .append('g')
+          .attr('transform', function (d) {
+            var coor = projection([d.log, d.lat]);
+            return 'translate(' + coor[0] + ', ' + coor[1] + ')';
+          });
+
+        locations.append('circle')
+          .attr('fill', 'blue')
+          .attr('r', 3);
+
+        places.append('defs')
+          .append('clipPath')
+          .attr('id', 'clipCircle')
+          .append('circle')
+          .attr('r', 45)
+          .attr('cx', 20 + 45)
+          .attr('cy', -45 + 45);
+
+        locations.append('image')
+          .attr('x', 20)
+          .attr('y', -45)
+          .attr('width', 90)
+          .attr('height', 90)
+          .attr('clip-path', 'url(#clipCircle)')
+          .attr('xlink:href', function (d) {
+            return d.img;
+          })
+          .attr('transform', 'scale(.8)')
+
+      });
+
+    });
+  }
+
+  </script>
+</body>
+</html>

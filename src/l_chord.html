@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>chord layout</title>
+  <style>
+    .chord path {
+      fill-opacity: .67;
+      stroke: #000;
+      stroke-width: .2px;
+    }
+  </style>
+</head>
+<body>
+
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  var city_name = [ "北京" , "上海" , "广州" , "深圳" , "香港"  ];
+
+  var population = [
+    [ 1000,  3045 , 4567 , 1234 , 3714 ],
+    [ 3214,  2000 , 2060 , 124  , 3234 ],
+    [ 8761,  6545 , 3000 , 8045 , 647  ],
+    [ 3211,  1067 , 3214 , 4000 , 1006 ],
+    [ 2146,  1034 , 6745 , 4764 , 5000 ]
+  ];
+
+  var width = 600;
+  var height = 600;
+
+  var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  var g_outer = svg.append('g')
+    .attr('transform', 'translate(' + width/2 + ', ' + height/2 + ')');
+
+  var chord_layout = d3.layout.chord()
+    .padding(.02)
+    .sortSubgroups(d3.descending)
+    .matrix(population);
+
+  var groups = chord_layout.groups();
+  var chords = chord_layout.chords();
+
+  // console.log(groups);
+  // console.log(chords);
+
+  var color = d3.scale.category20();
+
+  var innerRadius = width / 2 * 0.7;
+  var outerRadius = innerRadius * 1.1;
+
+  var arc = d3.svg.arc()
+    .innerRadius(innerRadius)
+    .outerRadius(outerRadius);
+
+  g_outer.selectAll('path')
+    .data(groups)
+    .enter()
+    .append('path')
+    .attr('fill', function (d) {
+      return color(d.index);
+    })
+    .attr('d', arc);
+
+  g_outer.selectAll('text')
+    .data(groups)
+    .enter()
+    .append('text')
+    .each(function (d) {
+      d.name = city_name[d.index];
+      d.angle = (d.startAngle + d.endAngle) / 2;
+    })
+    .attr('transform', function (d) {
+      return 'rotate(' + (d.angle * 180 / Math.PI - 90) + ')' +
+        ' translate(' + (outerRadius + 10) + ', 0)' +
+        ' rotate(90)';
+    })
+    .text(function (d) {
+      return d.name;
+    });
+
+  var inner_chord = d3.svg.chord()
+    .radius(innerRadius);
+
+  var defs = svg.append('defs');
+
+  svg.append('g')
+    .attr('class', 'chord')
+    .attr('transform', 'translate(' + width/2 + ', ' + height/2 + ')')
+    .selectAll('path')
+    .data(chords)
+    .enter()
+    .append('path')
+    .attr('d', inner_chord)
+    .attr('fill', function (d) {
+      var linearGradient = defs.append('linearGradient')
+        .attr('id', 'g' + d.source.index + '_' + d.source.subindex)
+        .attr('x1', '0%')
+        .attr('x2', '100%')
+        .attr('y1', '0%')
+        .attr('y2', '100%');
+
+      linearGradient.append('stop')
+        .attr('offset', '0%')
+        .attr('stop-color', color(d.target.index));
+
+      linearGradient.append('stop')
+        .attr('offset', '100%')
+        .attr('stop-color', color(d.source.index));
+
+      return 'url(#' + linearGradient.attr('id') + ')';
+    })
+    .on('mouseenter', function () {
+      var self = d3.select(this);
+      self.attr('fill.bak', self.attr('fill'))
+        .attr('fill', 'yellow');
+    })
+    .on('mouseleave', function () {
+      var self = d3.select(this);
+      self.transition()
+        .duration(1000)
+        .attr('fill', self.attr('fill.bak'));
+    })
+
+
+  </script>
+</body>
+</html>

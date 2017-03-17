@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>hello world</title>
+  <title>zoom map</title>
   <style>
     .axis path,
     .axis line {
@@ -51,7 +51,7 @@
   var color2 = d3.scale.category20c();
 
   var zoom = d3.behavior.zoom()
-    .scaleExtent([.5, 10])
+    .scaleExtent([.5, 30])
     .on('zoom', zoomed);
 
   var svg_zoom = svg.append('g');
@@ -103,7 +103,7 @@
               return color2(i);
             })
             .attr('stroke', '#000')
-            .attr('stroke-width', 1)
+            .attr('stroke-width', .2)
             .attr('d', path);
 
           var scale = zoom.scale();
@@ -147,11 +147,11 @@
     var e = d3.event;
     svg_zoom.attr('transform', 'translate(' + e.translate + ') scale(' + e.scale + ')');
     if (e.scale > 1) {
-      var fs = Math.round( 12 / e.scale );
+      var fs = Math.round( 120 / e.scale ) / 10;
       g_province_text.selectAll('text')
         .attr('font-size', (fs > 4 ? fs : 4) + 'px');
 
-      var fs2 = Math.round( 10 / e.scale );
+      var fs2 = Math.round( 100 / e.scale ) / 10;
       svg_zoom.selectAll('.countries_text').selectAll('text')
         .attr('font-size', fs2 + 'px');
     }

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>map mark</title>
+  <style>
+    .province,
+    #southsea {
+      stroke: #000;
+      stroke-width: .2;
+    }
+  </style>
+</head>
+<body onload="load()">
+
+  <script async type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script async type="text/javascript" src="../lib/topojson.v1.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  function load() {
+    var width = 800;
+    var height = 600;
+
+    var svg = d3.select('body').append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    var china = svg.append('g');
+
+    var projection = d3.geo.mercator()
+      .center([107, 31])
+      .scale(600)
+      .translate([width / 2, height * 2 /3]);
+
+    var path = d3.geo.path()
+      .projection(projection);
+
+    d3.json("./mapdata/china_detail.topo.json", function(error, root) {
+
+      if (error)
+        return console.error(error);
+
+      var geojson = topojson.feature(root, root.objects.china);
+
+      china.selectAll('path')
+        .data(geojson.features)
+        .enter()
+        .append('path')
+        .attr('class', 'province')
+        .attr('fill', '#ccc')
+        .attr('d', path);
+
+      // 南海
+      d3.xml('./mapdata/southchinasea.svg', function (err, xml) {
+        if (err)
+          return console.error(err);
+
+        svg.append(function () {
+          return xml.getElementsByTagName('g')[0];
+        });
+
+        svg.select('#southsea')
+          .attr('fill', '#ccc')
+          .attr('transform', 'translate(600, 500) scale(.5)');
+      });
+
+      var defs = svg.append('defs');
+      var arrowMarker = defs.append('marker')
+        .attr('id', 'arrowMarker')
+        .attr('markerUnits', 'strokeWidth')
+        .attr('markerWidth', 12)
+        .attr('markerHeight', 12)
+        .attr('viewBox', '0 0 12 12')
+        .attr('refX', 6)
+        .attr('refY', 6)
+        .attr('orient', 'auto');
+
+      arrowMarker.append('path')
+        .attr('d', 'M2,2 L10,6 L2,10 L6,6 L2,2')
+        .attr('fill', '#000');
+
+      var circleMarker = defs.append('marker')
+        .attr('id', 'circleMarker')
+        .attr('markerUnits', 'strokeWidth')
+        .attr('markerWidth', 12)
+        .attr('markerHeight', 12)
+        .attr('viewBox', '0 0 12 12')
+        .attr('refX', 6)
+        .attr('refY', 6)
+        .attr('orient', 'auto');
+
+      circleMarker.append('circle')
+        .attr('cx', 6)
+        .attr('cy', 6)
+        .attr('r', 2)
+        .attr('fill', '#000');
+
+      var peking = projection([116.3, 39.9]);
+      var guilin = projection([110.3, 25.3]);
+
+
+      var line = svg.append('line')
+        .attr('x1', guilin[0])
+        .attr('y1', guilin[1])
+        .attr('x2', peking[0])
+        .attr('y2', peking[1])
+        .attr('stroke', 'black')
+        .attr('stroke-width', 1)
+        .attr('marker-end', 'url(#arrowMarker')
+        .attr('marker-start', 'url(#circleMarker)');
+
+    });
+  }
+
+  </script>
+</body>
+</html>

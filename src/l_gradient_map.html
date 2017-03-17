@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>gradient map</title>
+  <style>
+    .province,
+    #southsea {
+      stroke: #000;
+      stroke-width: .2;
+    }
+  </style>
+</head>
+<body onload="load()">
+
+  <script async type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script async type="text/javascript" src="../lib/topojson.v1.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  function load() {
+    var width = 800;
+    var height = 600;
+
+    var projection = d3.geo.mercator()
+      .center([107, 36])
+      .scale(600)
+      .translate([width/2, height/2]);
+
+    var path = d3.geo.path()
+      .projection(projection);
+
+    var svg = d3.select('body').append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+    var china = svg.append('g');
+    var province_hint = svg.append('text')
+      .attr('id', 'province_hint')
+      .attr('dx', 20)
+      .attr('dy', 0)
+      .attr('fill', 'red');
+
+    d3.json("./mapdata/china_detail.topo.json", function(error, root) {
+
+      if (error)
+        return console.error(error);
+
+      // console.log(root);
+
+      var georoot = topojson.feature(root, root.objects.china);
+      // console.log(georoot.features);
+
+      // console.log(georoot);
+
+      var provinces = china.selectAll('path')
+        .data(georoot.features)
+        .enter()
+        .append('path')
+        .attr('class', 'province')
+        .attr('fill', '#ccc')
+        .attr('d', path);
+
+      // 南海
+      d3.xml('./mapdata/southchinasea.svg', function (err, xml) {
+        svg.append(function () {
+          return xml.getElementsByTagName('g')[0];
+        });
+
+        d3.select('#southsea')
+          .attr('transform', 'translate(600, 440) scale(.5)')
+          .style('fill', '#ccc');
+      });
+
+      // 数据上色
+      d3.json('./tourism.json', function (err, valued) {
+        var maxValue = Math.ceil(d3.max(valued.provinces, function (d) {
+          return d.value;
+        }));
+
+        var scale = d3.scale.linear()
+          .domain([0, maxValue])
+          .range([0, 1]);
+
+        var a = d3.rgb(0,255,255);  //浅蓝色
+        var b = d3.rgb(0,0,255);    //蓝色
+
+        var color = d3.interpolate(a, b);
+
+        var values = valued.provinces.reduce(function (prev, cur) {
+          prev[cur.name] = cur.value;
+          return prev;
+        }, []);
+
+        var svg_rect = svg.node().getBoundingClientRect();
+
+        provinces
+          .each(function (d) {
+            d.properties.value = values[d.properties.name];
+          })
+          .on('mouseenter', function () {
+            var e = d3.event;
+            var px = e.pageX, py = e.pageY;
+            var d = this.__data__;
+
+            province_hint
+              .attr('x', px - svg_rect.left)
+              .attr('y', py - svg_rect.top)
+              .attr('text-anchor', 'middle')
+              .selectAll('tspan')
+              .data([d.properties.name, d.properties.value || '无数据'])
+              .enter()
+              .append('tspan')
+              .attr('x', province_hint.attr('x') - 0)
+              .attr('dx', 50)
+              .attr('dy', '1em')
+              .text(function (d) {
+                return d;
+              });
+          })
+          .on('mousemove', function () {
+            var xy = d3.mouse(svg.node());
+            province_hint
+              .attr('x', xy[0])
+              .attr('y', xy[1])
+              .selectAll('tspan')
+              .attr('x', province_hint.attr('x') - 0)
+          })
+          .on('mouseout', function () {
+            province_hint.html('');
+          })
+          .transition()
+          .duration(1000)
+          .attr('fill', function (d) {
+            var t = scale(d.properties.value);
+            return t ? color(t) : '#ccc';
+          });
+
+        // 数据比例尺信息
+        var defs = svg.append('defs');
+        var linearGradient = defs.append('linearGradient')
+          .attr('id', 'linearColor')
+          .attr('x1', '0%')
+          .attr('x2', '100%')
+          .attr('y1', '0%')
+          .attr('y2', '0%');
+
+        var stop1 = linearGradient.append('stop')
+          .attr('offset', '0%')
+          .style('stop-color', a);
+
+        var stop2 = linearGradient.append('stop')
+          .attr('offset', '100%')
+          .style('stop-color', b);
+
+        var colorScaleRect = svg.append('rect')
+          .attr('x', 20)
+          .attr('y', 490)
+          .attr('width', 10)
+          .attr('height', 30)
+          .style('fill', 'url(#' + linearGradient.attr('id') + ')')
+          .transition()
+          .duration(1000)
+          .attr('width', 140);
+
+        svg.append('text')
+          .attr('x', 20)
+          .attr('y', 490)
+          .attr('dx', '-.6em')
+          .attr('dy', '-0.3em')
+          .text(0);
+
+        svg.append('text')
+          .attr('x', 30)
+          .attr('y', 490)
+          .attr('dy', '-0.3em')
+          .transition()
+          .duration(1000)
+          .attr('x', 160)
+          .tween('text', function () {
+            var i = d3.interpolate(0, maxValue);
+            return function (t) {
+              this.textContent = Math.round(i(t) * 10) / 10;
+            };
+          })
+      });
+
+    });
+  }
+
+  </script>
+</body>
+</html>
