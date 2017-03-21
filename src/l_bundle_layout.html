@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>bundle layout</title>
+  <style>
+    .link {
+      fill: none;
+      stroke: black;
+      stroke-opacity: .5;
+      stroke-width: 8px;
+    }
+
+    .node circle {
+      stroke: black;
+      stroke-width: 2px;
+    }
+
+    .node text{
+      font-size: 12px;
+      font-family: simsun;
+    }
+  </style>
+</head>
+<body>
+
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  var width = 600;
+  var height = 600;
+
+  var cities = {
+    name: "",
+    children:[
+      {name: "北京"},{name: "上海"},{name: "杭州"},
+      {name: "广州"},{name: "桂林"},{name: "昆明"},
+      {name: "成都"},{name: "西安"},{name: "太原"}
+    ]
+  };
+
+  var railway = [
+    {source: "北京", target: "上海"},
+    {source: "北京", target: "广州"},
+    {source: "北京", target: "杭州"},
+    {source: "北京", target: "西安"},
+    {source: "北京", target: "成都"},
+    {source: "北京", target: "太原"},
+    {source: "北京", target: "桂林"},
+    {source: "北京", target: "昆明"},
+    {source: "北京", target: "成都"},
+    {source: "上海", target: "杭州"},
+    {source: "昆明", target: "成都"},
+    {source: "西安", target: "太原"}
+  ];
+
+  var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  var cluster = d3.layout.cluster()
+    .size([360, width / 2 - 50])
+    .separation(function (a, b) {
+      return (a.parent == b.parent ? 1 : 2) / a.depth;
+    });
+
+  var bundle = d3.layout.bundle();
+
+  var nodes = cluster.nodes(cities);
+  var oLinks = getLinks(nodes, railway);
+  // console.log(nodes);
+  // console.log(oLinks);
+  var links = bundle(oLinks);
+  // console.log(links);
+
+  var line = d3.svg.line.radial()
+    .interpolate('bundle')
+    .tension(.85)
+    .radius(function (d) { return d.y; })
+    .angle(function (d) { return d.x * Math.PI / 180; });
+
+  var color = d3.scale.category20();
+
+  var gBundle = svg.append('g')
+    .attr('transform', 'translate(' + width / 2 + ', ' + height / 2 + ')');
+
+  gBundle.selectAll('.link')
+    .data(links)
+    .enter()
+    .append('path')
+    .attr('class', 'link')
+    .attr('d', line);
+
+  var node = gBundle.selectAll('.node')
+    .data(nodes.filter(function (n) { return !n.children; }))
+    .enter()
+    .append('g')
+    .attr('class', 'node')
+    .attr('transform', function (d) {
+      return 'rotate(' + (d.x - 90) + ') translate(' + d.y + ', 0) rotate(' + (90 - d.x) + ')';
+    });
+
+  node.append('circle')
+    .attr('r', 20)
+    .attr('fill', function (d, i) {
+      return color(i);
+    });
+
+  node.append('text')
+    .attr('dy', '.4em')
+    .attr('text-anchor', 'middle')
+    .text(function (d) {
+      return d.name;
+    })
+
+  function getLinks(nodes, links) {
+    var hash = {};
+    nodes.forEach(function (n) {
+      hash[n.name] = n;
+    });
+
+    var resultLinks = [];
+    links.forEach(function (l) {
+      resultLinks.push({
+        source: hash[l.source],
+        target: hash[l.target]
+      });
+    });
+    return resultLinks;
+  }
+
+
+  </script>
+</body>
+</html>

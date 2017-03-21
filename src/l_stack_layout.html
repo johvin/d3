@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>stack layout</title>
+  <style>
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+  }
+
+  .axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+  }
+  </style>
+</head>
+<body>
+
+  <script type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  var width = 700;
+  var height = 600;
+
+  var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  var dataset = [
+    { name: "PC" , 
+      sales: [  { year:2005, profit: 3000 },
+          { year:2006, profit: 1300 },
+          { year:2007, profit: 3700 },
+          { year:2008, profit: 4900 },
+          { year:2009, profit: 700 }] },
+    { name: "SmartPhone" , 
+      sales: [  { year:2005, profit: 2000 },
+          { year:2006, profit: 4000 },
+          { year:2007, profit: 1810 },
+          { year:2008, profit: 6540 },
+          { year:2009, profit: 2820 }] },
+    { name: "Software" , 
+      sales: [  { year:2005, profit: 1100 },
+          { year:2006, profit: 1700 },
+          { year:2007, profit: 1680 },
+          { year:2008, profit: 4000 },
+          { year:2009, profit: 4900 }] }
+    ];
+
+  var stack = d3.layout.stack()
+    .values(function (d) { return d.sales; })
+    .x(function (d) { return d.year; })
+    .y(function (d) { return d.profit; });
+
+  var data = stack(dataset);
+  // console.log(data);
+
+  var padding = { left:50, right:150, top:30, bottom:30 };
+
+  var xScale = d3.scale.ordinal()
+    .domain(data[0].sales.map(function (d) { return d.year; }))
+    .rangeRoundBands([0, width - padding.left - padding.right], .3);
+
+
+  var yScale = d3.scale.linear()
+    .domain([0, d3.max(data[data.length - 1].sales.map(function (d) { return d.y + d.y0; }))])
+    .range([height - padding.bottom - padding.top, 0]);
+
+  var color = d3.scale.category10();
+
+  var xAxis = d3.svg.axis()
+    .scale(xScale)
+    .orient('bottom');
+
+  var yAxis = d3.svg.axis()
+    .scale(yScale)
+    .orient('left');
+
+  var groups = svg.selectAll('g')
+    .data(data)
+    .enter()
+    .append('g')
+    .attr('transform', 'translate(' + padding.left + ', ' + padding.top + ')')
+    .style('fill', function (d, i) {
+      return color(i);
+    });
+
+  groups.selectAll('rect')
+    .data(function (d) { return d.sales; })
+    .enter()
+    .append('rect')
+    .attr('x', function (d) {
+      return xScale(d.year);
+    })
+    .attr('width', xScale.rangeBand())
+    .attr('y', function (d) {
+      return yScale(d.y0 + d.y);
+    })
+    .attr('height', function (d) {
+      return yScale(d.y0) - yScale(d.y0 + d.y);
+    });
+
+  var labHeight = 50;
+  var labRadius = 10;
+
+  var label = groups.append('g');
+
+  label.append('circle')
+    .attr('cx', width - padding.right - padding.left)
+    .attr('cy', function (d, i) {
+      return labHeight * (data.length - 1 - i) + padding.top;
+    })
+    .attr('r', labRadius);
+
+  label.append('text')
+    .attr('x', width - padding.right - padding.left + labRadius * 2)
+    .attr('y', function (d, i) {
+      return labHeight * (data.length - 1 - i) + padding.top;
+    })
+    .attr('dy', labRadius / 2)
+    .text(function (d) {
+      return d.name;
+    });
+
+  label.on('mouseenter', function () {
+    var self = this.parentNode;
+    var parent = self.parentNode;
+    parent.halfV = [];
+    [].forEach.call(parent.children, function (c) {
+      if (c !== self) {
+        parent.halfV.push(
+          d3.select(c)
+            .selectAll('rect')
+            .attr('fill-opacity', .3)
+        );
+      }
+    });
+  }).on('mouseleave', function () {
+    var parent = this.parentNode.parentNode;
+    parent.halfV.forEach(function (c) {
+      c.attr('fill-opacity', 1);
+    });
+  });
+
+  svg.append('g')
+    .attr('class', 'axis')
+    .attr('transform', 'translate(' + padding.left + ', ' + (height - padding.bottom) + ')')
+    .call(xAxis);
+
+  svg.append('g')
+    .attr('class', 'axis')
+    .attr('transform', 'translate(' + padding.left + ', ' + padding.top + ')')
+    .call(yAxis);
+
+
+  </script>
+</body>
+</html>

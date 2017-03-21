@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>treemap layout</title>
+  <style>
+  .nodeRect {
+    stroke: white;
+    stroke-width: 2px;
+  }
+
+  .nodeName {
+    fill: white;
+    font-size: 12px;
+    font-family: simsun;
+  }
+  </style>
+</head>
+<body onload="load()">
+
+  <script async type="text/javascript" src="../lib/d3.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+  function load() {
+    var width = 1000;
+    var height = 500;
+
+    var svg = d3.select('body').append('svg')
+      .attr('width', width)
+      .attr('height', height);
+
+
+    var treemap = d3.layout.treemap()
+      .size([width, height])
+      .value(function (d) { return d.gdp; });
+
+    d3.json('./citygdp.json', function (err, root) {
+      if (err)
+        return console.error(err);
+
+      console.log(root);
+
+      var nodes = treemap.nodes(root);
+      // console.log(nodes);
+
+      var color = d3.scale.category10();
+
+      var groups = svg.selectAll('g')
+        .data(nodes.filter(function (d) { return !d.children; }))
+        .enter()
+        .append('g');
+
+      groups.append('rect')
+        .attr('class', 'nodeRect')
+        .attr('x', function (d) {
+          return d.x;
+        })
+        .attr('y', function (d) {
+          return d.y;
+        })
+        .attr('width', function (d) {
+          return d.dx;
+        })
+        .attr('height', function (d) {
+          return d.dy;
+        })
+        .attr('fill', function (d) {
+          return color(d.parent.name);
+        });
+
+      groups.append('text')
+        .attr('class', 'nodeName')
+        .attr('x', function (d) {
+          return d.x;
+        })
+        .attr('y', function (d) {
+          return d.y;
+        })
+        .attr('dx', '.5em')
+        .attr('dy', '1.5em')
+        .text(function (d) {
+          return d.name + ' ' + d.gdp;
+        });
+
+
+    });
+  }
+
+  </script>
+</body>
+</html>
